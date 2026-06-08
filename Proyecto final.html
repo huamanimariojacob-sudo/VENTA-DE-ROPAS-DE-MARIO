@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Venta de Ropa</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+:root {
+    --gradiente-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradiente-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradiente-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradiente-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+body{
+    /* Fondo con imagen de ropa de moda + overlay oscuro para legibilidad */
+    background:
+        linear-gradient(rgba(17, 24, 39, 0.85), rgba(17, 24, 39, 0.85)),
+        url('https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop') center/cover no-repeat fixed;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+}
+
+.navbar{
+    background: var(--gradiente-1);
+    box-shadow: 0 4px 20px rgba(118, 75, 162, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand{
+    color:white!important;
+    font-weight:bold;
+    font-size: 1.4rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,.3);
+}
+
+.card{
+    border:none;
+    border-radius:20px;
+    box-shadow:0 8px 32px rgba(0,0,0,.3);
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.92);
+}
+
+.btn-primary{
+    background: var(--gradiente-1);
+    border:none;
+    transition: all.3s;
+}
+.btn-primary:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success{
+    background: var(--gradiente-4);
+    border:none;
+    transition: all.3s;
+}
+.btn-success:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
+}
+
+.btn-warning{
+    background: var(--gradiente-2);
+    border:none;
+    color: white;
+    transition: all.3s;
+}
+.btn-warning:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+    color: white;
+}
+
+.table thead{
+    background: var(--gradiente-1);
+    color:white;
+}
+
+.table tbody tr{
+    transition: all.2s;
+}
+
+.table tbody tr:hover{
+    background: linear-gradient(90deg, rgba(224, 195, 252, 0.4) 0%, rgba(142, 197, 252, 0.4) 100%);
+    transform: scale(1.01);
+}
+
+.search-box{
+    max-width:350px;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.9);
+}
+.search-box:focus{
+    border-color: #764ba2;
+    box-shadow: 0 0 0 0.25rem rgba(118, 75, 162, 0.25);
+}
+
+.badge-stock{
+    font-size:14px;
+    background: var(--gradiente-3)!important;
+    padding: 8px 12px;
+}
+
+.modal-header{
+    background: var(--gradiente-1);
+    color:white;
+}
+
+.modal-content{
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.95);
+}
+
+.form-control{
+    background: rgba(255,255,255,0.9);
+}
+
+.form-control:focus{
+    border-color: #667eea;
+    box-shadow: 0 0.25rem rgba(102, 126, 234, 0.25);
+    background: white;
+}
+
+.footer{
+    text-align:center;
+    padding:20px;
+    color:#fff;
+    font-weight: 600;
+    margin-top: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,.5);
+}
+
+/* Badges de stock según cantidad */
+.badge-alto { background: var(--gradiente-4)!important; }
+.badge-medio { background: var(--gradiente-3)!important; }
+.badge-bajo { background: var(--gradiente-2)!important; }
+
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-bag-heart-fill"></i>
+            Sistema de Venta de Ropa
+        </a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="card p-4">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" onclick="cargarExcel()">
+                    <i class="bi bi-cloud-upload-fill"></i> Cargar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-success w-100" onclick="abrirModalAgregar()">
+                    <i class="bi bi-plus-circle-fill"></i> Nuevo
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-warning w-100" onclick="exportarExcel()">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Exportar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="buscar" class="form-control search-box" placeholder="🔍 Buscar..." onkeyup="filtrarTabla()">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center">
+                <thead>
+                    <tr>
+                        <th><i class="bi bi-hash"></i></th>
+                        <th><i class="bi bi-tag-fill"></i> Producto</th>
+                        <th><i class="bi bi-box-seam"></i> Cantidad</th>
+                        <th><i class="bi bi-currency-dollar"></i> Precio</th>
+                        <th><i class="bi bi-cart-check"></i> Vendidos</th>
+                        <th><i class="bi bi-inboxes-fill"></i> Stock</th>
+                        <th><i class="bi bi-gear-fill"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="productoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-box2-heart"></i> Gestión de Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="indiceEditar">
+                <div class="mb-3">
+                    <label><i class="bi bi-tag"></i> Nombre del producto</label>
+                    <input type="text" id="nombre" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label><i class="bi bi-boxes"></i> Cantidad</label>
+                    <input type="number" id="cantidad" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label><i class="bi bi-cash-coin"></i> Precio</label>
+                    <input type="number" id="precio" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label><i class="bi bi-bag-check"></i> Cantidad Vendidos</label>
+                    <input type="number" id="vendidos" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label><i class="bi bi-archive"></i> Stock</label>
+                    <input type="number" id="stock" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarProducto()">
+                    <i class="bi bi-save-fill"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    <i class="bi bi-stars"></i> Sistema de Gestión de Ventas de Ropa <i class="bi bi-stars"></i>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let productos = [];
+let modal = new bootstrap.Modal(document.getElementById('productoModal'));
+
+function cargarExcel(){
+    const archivo = document.getElementById('excelFile').files[0];
+    if(!archivo){
+        Swal.fire({icon:'warning', title:'Seleccione un archivo Excel', background: '#fff', color: '#764ba2'});
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data,{type:'array'});
+        const hoja = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(hoja);
+        productos = [];
+        json.forEach((item,index)=>{
+            productos.push({
+                numero:index + 1,
+                nombre:item["Nombre del producto"] || "",
+                cantidad:item["cantidad"] || 0,
+                precio:item["precio"] || 0,
+                vendidos:item["cantidad de productos vendidos"] || 0,
+                stock:item["cantidad de stock"] || 0
+            });
+        });
+        mostrarTabla();
+        Swal.fire({icon:'success', title:'Excel cargado correctamente', background: '#fff', color: '#764ba2'});
+    };
+    reader.readAsArrayBuffer(archivo);
+}
+
+function mostrarTabla(){
+    const tbody = document.getElementById('tablaBody');
+    tbody.innerHTML = "";
+    productos.forEach((p,index)=>{
+        let badgeClass = 'badge-bajo';
+        if(p.stock > 20) badgeClass = 'badge-alto';
+        else if(p.stock > 10) badgeClass = 'badge-medio';
+
+        tbody.innerHTML += `
+        <tr>
+            <td><strong>${p.numero}</strong></td>
+            <td>${p.nombre}</td>
+            <td>${p.cantidad}</td>
+            <td><strong style="color: #667eea;">S/. ${parseFloat(p.precio).toFixed(2)}</strong></td>
+            <td>${p.vendidos}</td>
+            <td>
+                <span class="badge badge-stock ${badgeClass}">
+                    ${p.stock}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="editarProducto(${index})">
+                    <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">
+                    <i class="bi bi-trash-fill"></i>
+                </button>
+            </td>
+        </tr>
+        `;
+    });
+}
+
+function abrirModalAgregar(){
+    document.getElementById('indiceEditar').value = "";
+    document.getElementById('nombre').value = "";
+    document.getElementById('cantidad').value = "";
+    document.getElementById('precio').value = "";
+    document.getElementById('vendidos').value = "";
+    document.getElementById('stock').value = "";
+    modal.show();
+}
+
+function guardarProducto(){
+    const indice = document.getElementById('indiceEditar').value;
+    const producto = {
+        numero: productos.length + 1,
+        nombre: document.getElementById('nombre').value,
+        cantidad: document.getElementById('cantidad').value,
+        precio: document.getElementById('precio').value,
+        vendidos: document.getElementById('vendidos').value,
+        stock: document.getElementById('stock').value
+    };
+    if(producto.nombre == ""){
+        Swal.fire({icon:'error', title:'Ingrese el nombre del producto'});
+        return;
+    }
+    if(indice === ""){
+        productos.push(producto);
+        Swal.fire({icon:'success', title:'Producto agregado correctamente'});
+    }else{
+        productos[indice] = producto;
+        Swal.fire({icon:'success', title:'Producto actualizado correctamente'});
+    }
+    actualizarNumeros();
+    mostrarTabla();
+    modal.hide();
+}
+
+function editarProducto(index){
+    const p = productos[index];
+    document.getElementById('indiceEditar').value = index;
+    document.getElementById('nombre').value = p.nombre;
+    document.getElementById('cantidad').value = p.cantidad;
+    document.getElementById('precio').value = p.precio;
+    document.getElementById('vendidos').value = p.vendidos;
+    document.getElementById('stock').value = p.stock;
+    modal.show();
+}
+
+function eliminarProducto(index){
+    Swal.fire({
+        title:'¿Eliminar producto?',
+        text:'No podrá recuperarlo',
+        icon:'warning',
+        showCancelButton:true,
+        confirmButtonText:'Sí, eliminar',
+        cancelButtonText:'Cancelar',
+        confirmButtonColor: '#f5576c'
+    }).then((result)=>{
+        if(result.isConfirmed){
+            productos.splice(index,1);
+            actualizarNumeros();
+            mostrarTabla();
+            Swal.fire({icon:'success', title:'Producto eliminado'});
+        }
+    });
+}
+
+function actualizarNumeros(){
+    productos.forEach((p,index)=>{
+        p.numero = index + 1;
+    });
+}
+
+function filtrarTabla(){
+    const texto = document.getElementById('buscar').value.toLowerCase();
+    const filas = document.querySelectorAll("#tablaBody tr");
+    filas.forEach(fila=>{
+        const contenido = fila.textContent.toLowerCase();
+        fila.style.display = contenido.includes(texto)? "" : "none";
+    });
+}
+
+function exportarExcel(){
+    if(productos.length === 0){
+        Swal.fire({icon:'warning', title:'No hay datos para exportar'});
+        return;
+    }
+    const datos = productos.map(p=>({
+        "N°": p.numero,
+        "Nombre del producto": p.nombre,
+        "cantidad": p.cantidad,
+        "precio": p.precio,
+        "cantidad de productos vendidos": p.vendidos,
+        "cantidad de stock": p.stock
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(datos);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook,worksheet,"Ventas");
+    const fecha = new Date();
+    const nombreArchivo = `Venta de ropas-${fecha.getFullYear()}-${fecha.getMonth()+1}-${fecha.getDate()}_${fecha.getHours()}-${fecha.getMinutes()}-${fecha.getSeconds()}.xlsx`;
+    XLSX.writeFile(workbook,nombreArchivo);
+    Swal.fire({icon:'success', title:'Excel exportado correctamente'});
+}
+</script>
+
+</body>
+</html>
