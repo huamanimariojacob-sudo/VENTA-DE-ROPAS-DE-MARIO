@@ -23,7 +23,6 @@
 }
 
 body{
-    /* Fondo con imagen de ropa de moda + overlay oscuro para legibilidad */
     background:
         linear-gradient(rgba(17, 24, 39, 0.85), rgba(17, 24, 39, 0.85)),
         url('https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop') center/cover no-repeat fixed;
@@ -144,7 +143,6 @@ body{
     text-shadow: 2px 2px 4px rgba(0,0,0,.5);
 }
 
-/* Badges de stock según cantidad */
 .badge-alto { background: var(--gradiente-4)!important; }
 .badge-medio { background: var(--gradiente-3)!important; }
 .badge-bajo { background: var(--gradiente-2)!important; }
@@ -228,7 +226,7 @@ body{
                 </div>
                 <div class="mb-3">
                     <label><i class="bi bi-cash-coin"></i> Precio</label>
-                    <input type="number" id="precio" class="form-control">
+                    <input type="number" id="precio" class="form-control" step="0.01">
                 </div>
                 <div class="mb-3">
                     <label><i class="bi bi-bag-check"></i> Cantidad Vendidos</label>
@@ -275,15 +273,15 @@ function cargarExcel(){
         json.forEach((item,index)=>{
             productos.push({
                 numero:index + 1,
-                nombre:item["Nombre del producto"] || "",
-                cantidad:item["cantidad"] || 0,
-                precio:item["precio"] || 0,
-                vendidos:item["cantidad de productos vendidos"] || 0,
-                stock:item["cantidad de stock"] || 0
+                nombre: item["Nombre del producto"] || item["producto"] || item["Producto"] || item["nombre"] || "",
+                cantidad: item["cantidad"] || item["Cantidad"] || 0,
+                precio: item["precio"] || item["Precio"] || 0,
+                vendidos: item["cantidad de productos vendidos"] || item["vendidos"] || item["Vendidos"] || 0,
+                stock: item["cantidad de stock"] || item["stock"] || item["Stock"] || 0
             });
         });
         mostrarTabla();
-        Swal.fire({icon:'success', title:'Excel cargado correctamente', background: '#fff', color: '#764ba2'});
+        Swal.fire({icon:'success', title:'Excel cargado correctamente', text:`Se cargaron ${productos.length} productos`, background: '#fff', color: '#764ba2'});
     };
     reader.readAsArrayBuffer(archivo);
 }
@@ -336,10 +334,10 @@ function guardarProducto(){
     const producto = {
         numero: productos.length + 1,
         nombre: document.getElementById('nombre').value,
-        cantidad: document.getElementById('cantidad').value,
-        precio: document.getElementById('precio').value,
-        vendidos: document.getElementById('vendidos').value,
-        stock: document.getElementById('stock').value
+        cantidad: parseFloat(document.getElementById('cantidad').value) || 0,
+        precio: parseFloat(document.getElementById('precio').value) || 0,
+        vendidos: parseFloat(document.getElementById('vendidos').value) || 0,
+        stock: parseFloat(document.getElementById('stock').value) || 0
     };
     if(producto.nombre == ""){
         Swal.fire({icon:'error', title:'Ingrese el nombre del producto'});
